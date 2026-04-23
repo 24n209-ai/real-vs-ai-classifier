@@ -4,24 +4,25 @@ import torch.nn as nn
 from torchvision import models, transforms
 from PIL import Image
 import io
-from flask_cors import CORS   # 🔹 Added for CORS
+from flask_cors import CORS
+import os
 
 app = Flask(__name__)
-CORS(app)   # 🔹 Allow requests from frontend
+CORS(app)   # Allow requests from frontend
 
-# 🔹 Step 1: Recreate MobileNetV2 architecture
-model = models.mobilenet_v2(weights=None)   # use weights=None instead of pretrained
+# Step 1: Recreate MobileNetV2 architecture
+model = models.mobilenet_v2(weights=None)
 num_features = model.classifier[1].in_features
 model.classifier[1] = nn.Linear(num_features, 2)  # 2 classes: Fake vs Real
 
-# 🔹 Step 2: Load your checkpoint
+# Step 2: Load your checkpoint
 state_dict = torch.load("model_checkpoint.pth", map_location="cpu")
 model.load_state_dict(state_dict)
 
-# 🔹 Step 3: Set to evaluation mode
+# Step 3: Set to evaluation mode
 model.eval()
 
-# 🔹 Step 4: Define preprocessing (with normalization)
+# Step 4: Define preprocessing
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
@@ -42,10 +43,11 @@ def predict():
     with torch.no_grad():
         output = model(img_tensor)
         _, predicted = torch.max(output, 1)
-        # 🔹 Corrected label mapping
         label = "Fake" if predicted.item() == 0 else "Real"
 
     return jsonify({"prediction": label})
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # ✅ Use PORT from environment (important for Render/Heroku)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
