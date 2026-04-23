@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Real vs AI Image Detector</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="page">
+    <div class="card" id="card">
+      <div class="icon-ring">🔍</div>
+      <h1>Real vs AI Detector</h1>
+      <p class="subtitle">Upload any image to check if it's AI-generated or real</p>
+
+      <label class="drop-zone" id="dropZone">
+        <input type="file" id="imageInput" accept="image/*" hidden>
+        <div class="dz-icon" id="dzIcon">🖼️</div>
+        <strong id="dzTitle">Click to browse or drag & drop</strong>
+        <span id="dzSub">PNG, JPG, WEBP up to 10MB</span>
+      </label>
+
+      <button id="predictBtn" onclick="uploadImage()">Analyse Image</button>
+
+      <div id="loader"></div>
+      <div id="result" class="result-box hidden">
+        <div class="result-dot" id="resultDot"></div>
+        <div class="result-label">
+          <strong id="resultText">—</strong>
+          <span id="resultSub"></span>
+        </div>
+        <span class="badge" id="resultBadge"></span>
+      </div>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
