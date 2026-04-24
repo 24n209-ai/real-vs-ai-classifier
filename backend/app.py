@@ -1,53 +1,35 @@
 from flask import Flask, request, jsonify
-import torch
-import torch.nn as nn
-from torchvision import models, transforms
-from PIL import Image
-import io
 from flask_cors import CORS
-import os
+import torch
+from torchvision import transforms
+from PIL import Image
 
 app = Flask(__name__)
-CORS(app)   # Allow requests from frontend
+CORS(app)
 
-# Step 1: Recreate MobileNetV2 architecture
-model = models.mobilenet_v2(weights=None)
-num_features = model.classifier[1].in_features
-model.classifier[1] = nn.Linear(num_features, 2)  # 2 classes: Fake vs Real
-
-# Step 2: Load your checkpoint
-state_dict = torch.load("model_checkpoint.pth", map_location="cpu")
-model.load_state_dict(state_dict)
-
-# Step 3: Set to evaluation mode
+# Load + quantize model once
+model = torch.load("model_checkpoint.pth", map_location="cpu")
 model.eval()
+model = torch.quantization.quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
 
-# Step 4: Define preprocessing
+# Faster preprocessing
 transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize([0.485, 0.456, 0.406],
-                         [0.229, 0.224, 0.225])
+    transforms.Resize((160, 160)),   # smaller size
+    transforms.ToTensor()            # skip normalization if not essential
 ])
 
 @app.route("/predict", methods=["POST"])
 def predict():
     if "file" not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
-    
+
     file = request.files["file"]
-    img_bytes = file.read()
-    img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-    img_tensor = transform(img).unsqueeze(0)
+    image = Image.open(file).convert("RGB")
+    image_tensor = transform(image).unsqueeze(0)
 
     with torch.no_grad():
-        output = model(img_tensor)
-        _, predicted = torch.max(output, 1)
-        label = "Fake" if predicted.item() == 0 else "Real"
+        output = model(image_tensor)
+        prob = torch.sigmoid(output).item()
+        prediction = "Real" if prob > 0.5 else "Fake"
 
-    return jsonify({"prediction": label})
-
-if __name__ == "__main__":
-    # ✅ Use PORT from environment (important for Render/Heroku)
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    return jsonify({"prediction": prediction, "confidence": prob})
