@@ -18,6 +18,7 @@ transform = transforms.Compose([
     transforms.ToTensor()            # skip normalization if not essential
 ])
 
+#prediction
 @app.route("/predict", methods=["POST"])
 def predict():
     if "file" not in request.files:
@@ -33,3 +34,4 @@ def predict():
         prediction = "Real" if prob > 0.5 else "Fake"
 
     return jsonify({"prediction": prediction, "confidence": prob})
+

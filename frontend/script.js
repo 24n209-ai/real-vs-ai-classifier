@@ -45,10 +45,11 @@ async function uploadImage() {
   formData.append('file', file);
 
   try {
-    const response = await fetch("https://real-vs-ai-backend.onrender.com/predict", {
+    const response = await fetch("https://real-vs-ai-classifier-2.onrender.com/predict", {
     method: "POST",
     body: formData
 });
+
 
 
     if (!response.ok) throw new Error(response.statusText);
