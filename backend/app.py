@@ -29,14 +29,14 @@ scripted_model.eval()
 
 # 🔹 Step 5: Preprocessing (smaller input + normalization)
 transform = transforms.Compose([
-    transforms.Resize((96, 96)),   # smaller size speeds up inference
+    transforms.Resize((64, 64)),   # smaller size speeds up inference
     transforms.ToTensor(),
     transforms.Normalize([0.485, 0.456, 0.406],
                          [0.229, 0.224, 0.225])
 ])
 
 # 🔹 Warm up once
-dummy = torch.zeros(1, 3, 96, 96)
+dummy = torch.zeros(1, 3, 64, 64)
 with torch.no_grad():
     scripted_model(dummy)
 
