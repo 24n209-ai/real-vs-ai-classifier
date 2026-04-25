@@ -2,5 +2,5 @@ flask
 flask-cors
 torch
 torchvision
-gunicorn
 pillow
+gunicorn
