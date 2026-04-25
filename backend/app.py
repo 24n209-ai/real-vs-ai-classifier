@@ -17,16 +17,22 @@ state_dict = torch.load("model_checkpoint.pth", map_location="cpu")
 model.load_state_dict(state_dict)
 model.eval()
 
-# 🔹 Preprocessing
+# 🔹 Convert to TorchScript for faster inference
+scripted_model = torch.jit.script(model)
+scripted_model.eval()
+
+# 🔹 Preprocessing (with normalization)
 transform = transforms.Compose([
     transforms.Resize((128, 128)),
-    transforms.ToTensor()
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406],
+                         [0.229, 0.224, 0.225])
 ])
 
 # 🔹 Warm up
 dummy = torch.zeros(1, 3, 128, 128)
 with torch.no_grad():
-    model(dummy)
+    scripted_model(dummy)
 
 @app.route("/predict", methods=["POST"])
 def predict():
@@ -38,13 +44,15 @@ def predict():
     image_tensor = transform(image).unsqueeze(0)
 
     with torch.no_grad():
-        output = model(image_tensor)
+        output = scripted_model(image_tensor)
         probs = torch.softmax(output, dim=1)[0]
         confidence, predicted_class = torch.max(probs, dim=0)
 
+    # 🔹 Adjust mapping if training labels differ
     prediction = "Real" if predicted_class.item() == 0 else "Fake"
 
     return jsonify({"prediction": prediction, "confidence": confidence.item()})
 
 if __name__ == "__main__":
+    # For local testing only; use Gunicorn in production
     app.run(debug=True)
